@@ -1,0 +1,38 @@
+name: Publish video page
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - name: Prepare video page
+        run: |
+          mkdir public
+          cp index.html poster.jpg public/
+          curl --fail --location --retry 3 --retry-all-errors --max-time 600 \
+            --output public/video.mp4 \
+            https://github.com/admud222-svg/video-856307-2026-11-24/releases/download/v1/856307_stream.mp4
+          echo '241b5dc619f22a8f59149ba17a1dfecdfcea70d1edae226f0bc8d3d019b719f5  public/video.mp4' | sha256sum --check
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+      - uses: actions/deploy-pages@v4
+        id: deployment
